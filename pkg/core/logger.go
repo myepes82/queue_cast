@@ -47,6 +47,9 @@ func (l *Logger) Warn(message string) {
 func (l *Logger) Error(message string) {
 	l.printer.Error(message)
 }
+func (l *Logger) Fatal(message string) {
+	l.printer.Fatal(message)
+}
 
 func (l *Logger) Log(message string) {
 	switch l.level {

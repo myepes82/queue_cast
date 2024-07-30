@@ -15,14 +15,16 @@ type ConfigManager struct {
 
 const (
 	//Config vars
-	HOST = "WS_HOST"
-	PORT = "WS_PORT"
+	HOST = "QC_WS_HOST"
+	PORT = "QC_WS_PORT"
 )
 
 func NewConfigManager(logger *core.Logger) *ConfigManager {
 	return &ConfigManager{
 		logger: logger,
-		config: &ApplicationConfig{},
+		config: &ApplicationConfig{
+			SocketConfig: &SocketConfig{},
+		},
 	}
 }
 
@@ -39,6 +41,11 @@ func (c *ConfigManager) InitConfig() {
 		panic(err)
 	}
 
+	c.getConfigFromEnv()
+}
+
+func (c *ConfigManager) GetSocketConfig() *SocketConfig {
+	return c.config.SocketConfig
 }
 
 func (c *ConfigManager) loadSocketsConfig() (*SocketConfig, error) {
@@ -50,8 +57,8 @@ func (c *ConfigManager) loadSocketsConfig() (*SocketConfig, error) {
 	}
 
 	return &SocketConfig{
-		Host: viper.GetString("SOCKET_HOST"),
-		Port: viper.GetInt("SOCKET_PORT"),
+		Host: viper.GetString(HOST),
+		Port: viper.GetInt(PORT),
 	}, nil
 }
 

@@ -3,11 +3,12 @@ package main
 import (
 	"queuecast/pkg/config"
 	"queuecast/pkg/core"
+	"queuecast/pkg/socket"
 )
 
 func main() {
 
-	logger, err := core.NewLogger("debug")
+	logger, err := core.NewLogger("info")
 	if err != nil {
 		panic(err)
 	}
@@ -16,4 +17,19 @@ func main() {
 
 	configManager.InitConfig()
 
+	socketConfig := configManager.GetSocketConfig()
+
+	messageCompressor := core.NewMessageCompressor(logger)
+
+	socketHandler := socket.NewSocketHandler(logger, messageCompressor)
+
+	server, err := socket.NewServer(socketConfig, logger, socketHandler)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if err := server.Start(); err != nil {
+		return
+	}
 }

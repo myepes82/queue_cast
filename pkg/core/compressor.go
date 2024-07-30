@@ -7,10 +7,15 @@ import (
 )
 
 type MessageCompressor struct {
+	logger *Logger
 }
 
-func NewMessageCompressor() *MessageCompressor {
-	return &MessageCompressor{}
+func NewMessageCompressor(logger *Logger) *MessageCompressor {
+	logger.Info("Creating new message compressor")
+	defer logger.Info("Message compressor created")
+	return &MessageCompressor{
+		logger: logger,
+	}
 }
 
 func (c *MessageCompressor) Compress(data []byte) ([]byte, error) {
