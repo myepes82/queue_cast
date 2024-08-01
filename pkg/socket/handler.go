@@ -98,7 +98,6 @@ func (s *Handler) HandleSocketConnections(w http.ResponseWriter, r *http.Request
 	socketKey := r.Header.Get("Sec-WebSocket-Key")
 	topic := r.URL.Query().Get("topic")
 
-	s.logger.Info("new WebSocket connection established")
 	s.logger.Info("client connected", zap.String("client", socketKey))
 	s.logger.Info("client topic connected", zap.String("topic", topic))
 
