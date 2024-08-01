@@ -4,11 +4,13 @@ import (
 	"queuecast/pkg/config"
 	"queuecast/pkg/core"
 	"queuecast/pkg/socket"
+
+	"go.uber.org/zap"
 )
 
 func main() {
 
-	logger, err := core.NewLogger("info")
+	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
@@ -17,13 +19,17 @@ func main() {
 
 	configManager.InitConfig()
 
+	serverConfig := configManager.GetServerConfig()
 	socketConfig := configManager.GetSocketConfig()
 
 	messageCompressor := core.NewMessageCompressor(logger)
 
-	socketHandler := socket.NewSocketHandler(logger, messageCompressor)
+	socketHandler := socket.NewSocketHandler(
+		socketConfig,
+		logger,
+		messageCompressor)
 
-	server, err := socket.NewServer(socketConfig, logger, socketHandler)
+	server, err := socket.NewServer(serverConfig, logger, socketHandler)
 
 	if err != nil {
 		panic(err)

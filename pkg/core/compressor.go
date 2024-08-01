@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"compress/gzip"
 	"io"
+
+	"go.uber.org/zap"
 )
 
 type MessageCompressor struct {
-	logger *Logger
+	logger *zap.Logger
 }
 
-func NewMessageCompressor(logger *Logger) *MessageCompressor {
+func NewMessageCompressor(logger *zap.Logger) *MessageCompressor {
 	logger.Info("Creating new message compressor")
 	defer logger.Info("Message compressor created")
 	return &MessageCompressor{

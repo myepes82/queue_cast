@@ -1,3 +1,8 @@
-QC_WS_HOST: http://localhost
 QC_WS_PATH: /ws
 QC_WS_PORT: 8080
+QC_WS_TIMEOUT: 5000000000
+QC_WS_READ_BUFFER_SIZE: 4096
+QC_WS_WRITE_BUFFER_SIZE: 4096
+QC_WS_TOPICS:
+  - "notifications"
+  - "payments"

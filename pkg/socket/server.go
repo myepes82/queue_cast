@@ -2,27 +2,29 @@ package socket
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"queuecast/pkg/config"
-	"queuecast/pkg/core"
 	"syscall"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type Server struct {
 	port          int
-	logger        *core.Logger
+	logger        *zap.Logger
 	server        *http.Server
-	socketHandler *SocketHandler
+	socketHandler *Handler
 }
 
 func NewServer(
-	config *config.SocketConfig,
-	logger *core.Logger,
-	handler *SocketHandler) (*Server, error) {
+	config *config.ServerConfig,
+	logger *zap.Logger,
+	handler *Handler) (*Server, error) {
 
 	logger.Info("Creating new socket server")
 
@@ -37,14 +39,16 @@ func NewServer(
 }
 
 func (s *Server) Start() error {
-	s.logger.Info(fmt.Sprintf("Starting socket server on port %d", s.port))
+	s.logger.Info("Starting socket server", zap.Int("port", s.port))
+
+	http.HandleFunc("/ws", s.socketHandler.HandleSocketConnections)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
-		if err := s.server.ListenAndServe(); err != nil {
-			s.logger.Fatal(fmt.Sprintf("Failed to start socket server: %v", err))
+		if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			s.logger.Fatal("Failed to start socket server", zap.Error(err))
 		}
 	}()
 
@@ -58,7 +62,7 @@ func (s *Server) Start() error {
 	defer cancel()
 
 	if err := s.server.Shutdown(ctx); err != nil {
-		s.logger.Error(fmt.Sprintf("Failed to shutdown socket server: %v", err))
+		s.logger.Error("Failed to shutdown socket server", zap.Error(err))
 	}
 
 	return nil
