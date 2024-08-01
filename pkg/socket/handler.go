@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"queuecast/pkg/config"
-	"queuecast/pkg/interfaces"
+	"queuecast/pkg/definitions"
 
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
@@ -13,7 +13,7 @@ import (
 type Handler struct {
 	logger     *zap.Logger
 	upgrader   *websocket.Upgrader
-	compressor interfaces.Compressor
+	compressor definitions.Compressor
 	channels   *[]Channel
 }
 
@@ -24,7 +24,7 @@ const (
 func NewSocketHandler(
 	config *config.SocketConfig,
 	logger *zap.Logger,
-	compressor interfaces.Compressor) *Handler {
+	compressor definitions.Compressor) *Handler {
 	return &Handler{
 		logger: logger,
 		upgrader: &websocket.Upgrader{

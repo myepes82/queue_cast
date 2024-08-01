@@ -2,7 +2,7 @@ package main
 
 import (
 	"queuecast/pkg/config"
-	"queuecast/pkg/core"
+	"queuecast/pkg/core/service"
 	"queuecast/pkg/socket"
 
 	"go.uber.org/zap"
@@ -22,7 +22,7 @@ func main() {
 	serverConfig := configManager.GetServerConfig()
 	socketConfig := configManager.GetSocketConfig()
 
-	messageCompressor := core.NewMessageCompressor(logger)
+	messageCompressor := service.NewMessageCompressor(logger)
 
 	socketHandler := socket.NewSocketHandler(
 		socketConfig,

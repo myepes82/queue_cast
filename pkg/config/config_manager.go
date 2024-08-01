@@ -1,10 +1,9 @@
 package config
 
 import (
-	"queuecast/pkg/errors"
-
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
+	"queuecast/pkg/core/errors"
 )
 
 type ConfigManager struct {
