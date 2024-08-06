@@ -23,25 +23,24 @@ type Server struct {
 
 func NewServer(
 	config *config.ServerConfig,
-	logger *zap.Logger,
-	handler *Handler) (*Server, error) {
+	logger *zap.Logger) (*Server, error) {
 
 	logger.Info("Creating new socket server")
 
-	return &Server{
+	server := &Server{
 		server: &http.Server{
 			Addr: fmt.Sprintf(":%d", config.Port),
 		},
-		logger:        logger,
-		port:          config.Port,
-		socketHandler: handler,
-	}, nil
+		logger: logger,
+		port:   config.Port,
+	}
+
+	logger.Info("Socket server created")
+	return server, nil
 }
 
 func (s *Server) Start() error {
 	s.logger.Info("Starting socket server", zap.Int("port", s.port))
-
-	http.HandleFunc("/ws", s.socketHandler.HandleSocketConnections)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

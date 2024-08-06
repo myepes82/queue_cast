@@ -13,7 +13,27 @@ type ServerConfig struct {
 	Port int
 }
 
+type DatabaseConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+}
+
 type ApplicationConfig struct {
-	SocketConfig *SocketConfig
-	ServerConfig *ServerConfig
+	socketConfig   *SocketConfig
+	serverConfig   *ServerConfig
+	databaseConfig *DatabaseConfig
+}
+
+func (cfg *ApplicationConfig) GetSocketConfig() *SocketConfig {
+	return cfg.socketConfig
+}
+
+func (cfg *ApplicationConfig) GetServerConfig() *ServerConfig {
+	return cfg.serverConfig
+}
+
+func (cfg *ApplicationConfig) GetDatabaseConfig() *DatabaseConfig {
+	return cfg.databaseConfig
 }

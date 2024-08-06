@@ -18,6 +18,10 @@ const (
 	READ_BUFFER_SIZE  = "QC_WS_READ_BUFFER_SIZE"
 	WRITE_BUFFER_SIZE = "QC_WS_WRITE_BUFFER_SIZE"
 	WS_TOPICS         = "QC_WS_TOPICS"
+	DB_HOST           = "QC_WS_DB_HOST"
+	DB_PORT           = "QC_WS_DB_PORT"
+	DB_USER           = "QC_WS_DB_USER"
+	DB_PASS           = "QC_WS_DB_PASS"
 )
 
 func NewConfigManager(logger *zap.Logger) *ConfigManager {
@@ -25,6 +29,10 @@ func NewConfigManager(logger *zap.Logger) *ConfigManager {
 		logger: logger,
 		config: &ApplicationConfig{},
 	}
+}
+
+func (cm *ConfigManager) GetConfig() *ApplicationConfig {
+	return cm.config
 }
 
 func (c *ConfigManager) InitConfig() {
@@ -43,14 +51,6 @@ func (c *ConfigManager) InitConfig() {
 	c.getConfigFromEnv()
 }
 
-func (c *ConfigManager) GetSocketConfig() *SocketConfig {
-	return c.config.SocketConfig
-}
-
-func (c *ConfigManager) GetServerConfig() *ServerConfig {
-	return c.config.ServerConfig
-}
-
 func (c *ConfigManager) loadServerConfig() error {
 	if err := c.verifyConfig(
 		[]string{PORT}); err != nil {
@@ -58,7 +58,7 @@ func (c *ConfigManager) loadServerConfig() error {
 		return err
 	}
 
-	c.config.ServerConfig = &ServerConfig{
+	c.config.serverConfig = &ServerConfig{
 		Port: viper.GetInt(PORT),
 	}
 	return nil
@@ -77,11 +77,33 @@ func (c *ConfigManager) loadSocketsConfig() error {
 		return err
 	}
 
-	c.config.SocketConfig = &SocketConfig{
+	c.config.socketConfig = &SocketConfig{
 		TimeOut:     viper.GetDuration(TIMEOUT),
 		RBufferSize: viper.GetInt(READ_BUFFER_SIZE),
 		WBufferSize: viper.GetInt(WRITE_BUFFER_SIZE),
 		Topics:      viper.GetStringSlice(WS_TOPICS),
+	}
+
+	return nil
+}
+
+func (c *ConfigManager) loadDBConfig() error {
+	if err := c.verifyConfig(
+		[]string{
+			DB_HOST,
+			DB_PORT,
+			DB_USER,
+			DB_PORT,
+		}); err != nil {
+		c.logger.Error("error loading db configs", zap.Error(err))
+		return err
+	}
+
+	c.config.databaseConfig = &DatabaseConfig{
+		Host:     viper.GetString(DB_HOST),
+		Port:     viper.GetInt(DB_PORT),
+		User:     viper.GetString(DB_USER),
+		Password: viper.GetString(DB_PASS),
 	}
 
 	return nil
@@ -98,6 +120,10 @@ func (c *ConfigManager) getConfigFromEnv() {
 
 	if err := c.loadSocketsConfig(); err != nil {
 		c.logger.Fatal("error loading socket configs", zap.Error(err))
+	}
+
+	if err := c.loadDBConfig(); err != nil {
+		c.logger.Fatal("error loading db configs", zap.Error(err))
 	}
 
 }

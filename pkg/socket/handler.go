@@ -5,26 +5,27 @@ import (
 	"net/http"
 	"queuecast/pkg/config"
 	"queuecast/pkg/definitions"
+	"queuecast/pkg/port/in"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"go.uber.org/zap"
 )
 
 type Handler struct {
-	logger     *zap.Logger
-	upgrader   *websocket.Upgrader
-	compressor definitions.Compressor
-	channels   *[]Channel
+	logger           *zap.Logger
+	upgrader         *websocket.Upgrader
+	compressor       definitions.Compressor
+	eventPersistence in.SaveEventCommand
+	broadCast        *Broadcast
 }
-
-const (
-	defaultTopicChannel = "general"
-)
 
 func NewSocketHandler(
 	config *config.SocketConfig,
 	logger *zap.Logger,
-	compressor definitions.Compressor) *Handler {
+	broadcast *Broadcast,
+	compressor definitions.Compressor,
+	eventPersistence in.SaveEventCommand) *Handler {
 	return &Handler{
 		logger: logger,
 		upgrader: &websocket.Upgrader{
@@ -33,25 +34,14 @@ func NewSocketHandler(
 			WriteBufferSize:  config.WBufferSize,
 			CheckOrigin:      func(r *http.Request) bool { return true },
 		},
-		compressor: compressor,
-		channels:   initializeChannels(config.Topics),
+		broadCast:        broadcast,
+		eventPersistence: eventPersistence,
+		compressor:       compressor,
 	}
-}
-
-func initializeChannels(topics []string) *[]Channel {
-	var channels []Channel = []Channel{
-		{Topic: defaultTopicChannel},
-	}
-	for _, topic := range topics {
-		channels = append(channels, Channel{
-			Topic: topic,
-		})
-	}
-	return &channels
 }
 
 func (s *Handler) writeMessage(conn *websocket.Conn, messageType int, message string) error {
-	compressedMessage, err := s.compressor.Compress([]byte(message))
+	compressedMessage, err := s.compressor.Compress(message)
 	if err != nil {
 		s.logger.Error("Error compressing message", zap.Error(err))
 		return err
@@ -77,6 +67,15 @@ func (s *Handler) readMessage(conn *websocket.Conn) {
 		s.logger.Info("Message received",
 			zap.Int("messageType", messageType),
 			zap.String("message", message))
+
+		eventDto := in.SaveEventCommandDto{
+			Time:    time.Now(),
+			Origin:  conn.RemoteAddr().String(),
+			Content: message,
+		}
+		if err := s.eventPersistence.Execute(eventDto); err != nil {
+			s.logger.Error("error at saving input event", zap.Error(err))
+		}
 	}
 }
 

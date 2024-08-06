@@ -1,41 +1,59 @@
 package main
 
 import (
+	"fmt"
+	"go.uber.org/zap"
+	persistence "queuecast/pkg/adapters/out/persistente"
+	"queuecast/pkg/application"
 	"queuecast/pkg/config"
 	"queuecast/pkg/core/service"
+	"queuecast/pkg/core/usecases"
 	"queuecast/pkg/socket"
-
-	"go.uber.org/zap"
+	"queuecast/pkg/utils"
 )
 
 func main() {
 
-	logger, err := zap.NewProduction()
-	if err != nil {
-		panic(err)
-	}
+	logger := utils.GetLoggerFactory()
+
+	defer func(logger *zap.Logger) {
+		if err := logger.Sync(); err != nil {
+			fmt.Println("failed to sync zap logger")
+		}
+	}(logger)
 
 	configManager := config.NewConfigManager(logger)
 
 	configManager.InitConfig()
 
-	serverConfig := configManager.GetServerConfig()
-	socketConfig := configManager.GetSocketConfig()
+	applicationConfig := configManager.GetConfig()
 
-	messageCompressor := service.NewMessageCompressor(logger)
+	serverConfig := applicationConfig.GetServerConfig()
+	databaseConfig := applicationConfig.GetDatabaseConfig()
 
-	socketHandler := socket.NewSocketHandler(
-		socketConfig,
-		logger,
-		messageCompressor)
+	//Persistence
+	database := persistence.NewRedisPersistence(databaseConfig, logger)
 
-	server, err := socket.NewServer(serverConfig, logger, socketHandler)
+	//Services
+	messageCompressorService := service.NewMessageCompressor(logger)
+
+	//Adapters - Out
+	eventRepository := persistence.NewEventPersistenceAdapter(logger, database)
+
+	//Adapter - In
+
+	//use_cases
+	saveEventUseCase := usecases.NewSaveEventUseCase(eventRepository, logger)
+
+	server, err := socket.NewServer(serverConfig, logger)
 
 	if err != nil {
 		panic(err)
 	}
 
-	if err := server.Start(); err != nil {
+	newApplication := application.NewSocketApplication(logger, applicationConfig, server, messageCompressorService, saveEventUseCase)
+
+	if err = newApplication.Start(); err != nil {
 		return
 	}
 }
